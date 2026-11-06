@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Weather Tracker</title>
+
+  <!-- EmailJS Browser SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 30px 15px;
+      color: #1e293b;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      text-align: center;
+      color: #1e293b;
+      margin-top: 0;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 15px;
+      color: #334155;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 7px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .current-btn {
+      background: #475569;
+    }
+
+    .result {
+      background: #f8fafc;
+      padding: 18px;
+      border-radius: 8px;
+      margin-top: 25px;
+      display: none;
+      overflow-wrap: anywhere;
+      border: 1px solid #e2e8f0;
+    }
+
+    .result h3 {
+      margin: 0 0 8px;
+    }
+
+    .result p {
+      line-height: 1.6;
+      margin: 8px 0;
+    }
+
+    .section {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .weather-now {
+      font-size: 34px;
+      font-weight: bold;
+      color: #1e293b;
+      margin: 4px 0;
+    }
+
+    .weather-desc {
+      color: #475569;
+      margin: 0 0 8px;
+    }
+
+    .forecast-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .forecast-row:last-child {
+      border-bottom: none;
+    }
+
+    .forecast-day {
+      font-weight: bold;
+      min-width: 90px;
+    }
+
+    .podcast {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      padding: 14px 16px;
+      border-radius: 6px;
+      line-height: 1.7;
+      white-space: pre-line;
+      font-size: 14px;
+    }
+
+    .map-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .map-link:hover {
+      text-decoration: underline;
+    }
+
+    .notice {
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #475569;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+
+    #status {
+      text-align: center;
+      margin-top: 14px;
+      font-weight: bold;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 25px;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 22px;
+      }
+
+      .forecast-row {
+        flex-direction: column;
+        gap: 2px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>Weather Tracker</h1>
+
+    <p class="subtitle">
+      Location details, today's weather and a 3-day forecast.
+    </p>
+
+    <!-- Coordinate Inputs -->
+
+    <label for="latitude">Latitude</label>
+
+    <input
+      type="number"
+      id="latitude"
+      placeholder="Example: 20.2961"
+      step="any"
+      min="-90"
+      max="90"
+    >
+
+    <label for="longitude">Longitude</label>
+
+    <input
+      type="number"
+      id="longitude"
+      placeholder="Example: 85.8245"
+      step="any"
+      min="-180"
+      max="180"
+    >
+
+    <!-- Find Location -->
+
+    <button id="findBtn">
+      Weather
+    </button>
+
+    <!-- Current Location -->
+
+    <button class="current-btn" id="currentBtn">
+      Use My Current Location
+    </button>
+
+    <!-- Status -->
+
+    <div id="status" role="status" aria-live="polite"></div>
+
+    <!-- Report -->
+
+    <div class="result" id="result">
+
+      <h3>Location Details</h3>
+
+      <p><b>Latitude:</b> <span id="showLat"></span></p>
+      <p><b>Longitude:</b> <span id="showLon"></span></p>
+      <p><b>Area:</b> <span id="showArea"></span></p>
+      <p><b>City:</b> <span id="showCity"></span></p>
+      <p><b>State:</b> <span id="showState"></span></p>
+      <p><b>Country:</b> <span id="showCountry"></span></p>
+      <p><b>Full Address:</b> <span id="showAddress"></span></p>
+
+      <a
+        id="mapLink"
+        class="map-link"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Open Location in Google Maps
+      </a>
+
+      <div class="section">
+        <h3>Weather Today</h3>
+        <div class="weather-now" id="showTemp"></div>
+        <p class="weather-desc" id="showDesc"></p>
+        <p id="showDetails"></p>
+        <p id="showToday"></p>
+      </div>
+
+      <div class="section">
+        <h3>Next 3 Days</h3>
+        <div id="showForecast"></div>
+      </div>
+
+      <div class="section">
+        <h3>Weather Podcast</h3>
+        <div class="podcast" id="showPodcast"></div>
+      </div>
+
+    </div>
+
+    <!-- Notice -->
+
+    <div class="notice">
+      Weather data:
+      Open-Meteo. Location data: OpenStreetMap.
+    </div>
+
+    <div class="footer">
+      Weather Tracker | OpenStreetMap + Open-Meteo + EmailJS
+    </div>
+
+  </div>
+
+  <script>
+
+    // =========================================
+    // 1. EMAIL CONFIGURATION
+    // =========================================
+
+    // Your fixed recipient Gmail address
+    const MY_GMAIL = "soumyaranjanmohanty0009@gmail.com";
+
+    // EmailJS credentials
+    const EMAILJS_PUBLIC_KEY = "Ngnzt7B5vDjKaljK0";
+    const EMAILJS_SERVICE_ID = "service_1spvr7n";
+    const EMAILJS_TEMPLATE_ID = "template_3hcq259";
+
+    // Initialize EmailJS
+    emailjs.init({
+      publicKey: EMAILJS_PUBLIC_KEY
+    });
+
+
+    // =========================================
+    // 2. GLOBAL VARIABLES
+    // =========================================
+
+    let lastReport = null;          // latest location + weather + email params
+    let lastGeocodingRequest = 0;
+    let requestCounter = 0;         // ignores stale responses
+
+    const latitudeInput = document.getElementById("latitude");
+    const longitudeInput = document.getElementById("longitude");
+    const result = document.getElementById("result");
+    const status = document.getElementById("status");
+
+
+    // =========================================
+    // 3. VALIDATE COORDINATES
+    // =========================================
+
+    function validateCoordinates(lat, lon) {
+
+      return (
+        Number.isFinite(lat) &&
+        Number.isFinite(lon) &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lon >= -180 &&
+        lon <= 180
+      );
+
+    }
+
+
+    // =========================================
+    // 4. WEATHER CODE DESCRIPTIONS (WMO)
+    // =========================================
+
+    function describeWeatherCode(code) {
+
+      const map = {
+        0: "Clear sky",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Foggy",
+        48: "Foggy with frost",
+        51: "Light drizzle",
+        53: "Moderate drizzle",
+        55: "Dense drizzle",
+        56: "Light freezing drizzle",
+        57: "Dense freezing drizzle",
+        61: "Light rain",
+        63: "Moderate rain",
+        65: "Heavy rain",
+        66: "Light freezing rain",
+        67: "Heavy freezing rain",
+        71: "Light snow",
+        73: "Moderate snow",
+        75: "Heavy snow",
+        77: "Snow grains",
+        80: "Light rain showers",
+        81: "Moderate rain showers",
+        82: "Violent rain showers",
+        85: "Light snow showers",
+        86: "Heavy snow showers",
+        95: "Thunderstorm",
+        96: "Thunderstorm with light hail",
+        99: "Thunderstorm with heavy hail"
+      };
+
+      return map[code] || "Unknown conditions";
+
+    }
+
+
+    // =========================================
+    // 5. REVERSE GEOCODING (OpenStreetMap)
+    // =========================================
+
+    async function reverseGeocode(lat, lon) {
+
+      // Respect the public Nominatim service's
+      // one-request-per-second usage policy.
+      const elapsed = Date.now() - lastGeocodingRequest;
+      const waitTime = Math.max(0, 1100 - elapsed);
+
+      if (waitTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+
+      lastGeocodingRequest = Date.now();
+
+      const url =
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Location service is unavailable.");
+      }
+
+      const data = await response.json();
+
+      if (!data.address) {
+        throw new Error("No address found for these coordinates.");
+      }
+
+      const address = data.address;
+
+      const area =
+        address.suburb ||
+        address.neighbourhood ||
+        address.village ||
+        address.hamlet ||
+        address.town ||
+        address.city_district ||
+        "Not available";
+
+      const city =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.municipality ||
+        "Not available";
+
+      return {
+        latitude: lat,
+        longitude: lon,
+        area: area,
+        city: city,
+        state: address.state || "Not available",
+        country: address.country || "Not available",
+        full_address: data.display_name || "Not available"
+      };
+
+    }
+
+
+    // =========================================
+    // 6. WEATHER (Open-Meteo, no API key needed)
+    // =========================================
+
+    async function fetchWeather(lat, lon) {
+
+      const url =
+        "https://api.open-meteo.com/v1/forecast" +
+        `?latitude=${encodeURIComponent(lat)}` +
+        `&longitude=${encodeURIComponent(lon)}` +
+        "&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m" +
+        "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset" +
+        "&timezone=auto" +
+        "&forecast_days=4";
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Weather service is unavailable.");
+      }
+
+      const data = await response.json();
+
+      if (!data.current || !data.daily) {
+        throw new Error("No weather data found for these coordinates.");
+      }
+
+      const c = data.current;
+      const d = data.daily;
+
+      const current = {
+        temp: Math.round(c.temperature_2m),
+        feels: Math.round(c.apparent_temperature),
+        humidity: Math.round(c.relative_humidity_2m),
+        wind: Math.round(c.wind_speed_10m),
+        rain: c.precipitation,
+        desc: describeWeatherCode(c.weather_code)
+      };
+
+      // Index 0 = today, 1-3 = next three days
+      const days = d.time.map(function (dateStr, i) {
+
+        const dateObj = new Date(dateStr + "T00:00:00");
+
+        return {
+          label: dateObj.toLocaleDateString("en-IN", {
+            weekday: "short",
+            day: "2-digit",
+            month: "short"
+          }),
+          desc: describeWeatherCode(d.weather_code[i]),
+          max: Math.round(d.temperature_2m_max[i]),
+          min: Math.round(d.temperature_2m_min[i]),
+          rainChance: d.precipitation_probability_max[i] ?? 0,
+          sunrise: d.sunrise[i].split("T")[1],
+          sunset: d.sunset[i].split("T")[1]
+        };
+
+      });
+
+      return { current: current, days: days };
+
+    }
+
+
+    // =========================================
+    // 7. BUILD TEXT FOR PAGE + EMAIL + PODCAST
+    // =========================================
+
+    function placeName(loc) {
+
+      const parts = [];
+
+      [loc.area, loc.city, loc.state].forEach(function (p) {
+        if (p && p !== "Not available" && !parts.includes(p)) {
+          parts.push(p);
+        }
+      });
+
+      return parts.length ? parts.join(", ") : "your location";
+
+    }
+
+    function buildPodcastScript(loc, w) {
+
+      const hour = new Date().getHours();
+
+      const greeting =
+        hour < 12 ? "Good morning" :
+        hour < 17 ? "Good afternoon" :
+        "Good evening";
+
+      const c = w.current;
+      const today = w.days[0];
+
+      const lines = [];
+
+      lines.push(`${greeting}! This is your weather update for ${placeName(loc)}.`);
+
+      lines.push(
+        `Right now it is ${c.temp} degrees Celsius with ${c.desc.toLowerCase()}, ` +
+        `and it feels like ${c.feels} degrees.`
+      );
+
+      lines.push(
+        `Humidity is ${c.humidity} percent, and winds are around ${c.wind} kilometres per hour.`
+      );
+
+      lines.push(
+        `Today, expect a high of ${today.max} and a low of ${today.min} degrees, ` +
+        `with a ${today.rainChance} percent chance of rain. ` +
+        `Sunrise was at ${today.sunrise}, and sunset is at ${today.sunset}.`
+      );
+
+      lines.push("Looking ahead:");
+
+      for (let i = 1; i <= 3 && i < w.days.length; i++) {
+
+        const day = w.days[i];
+
+        lines.push(
+          `${day.label}: ${day.desc}, between ${day.min} and ${day.max} degrees, ` +
+          `with a ${day.rainChance} percent chance of rain.`
+        );
+
+      }
+
+      lines.push("That's your weather update. Stay safe and have a great day!");
+
+      return lines.join("\n");
+
+    }
+
+    function buildForecastText(w) {
+
+      const rows = [];
+
+      for (let i = 1; i <= 3 && i < w.days.length; i++) {
+
+        const day = w.days[i];
+
+        rows.push(
+          `${day.label}: ${day.desc}, ${day.min}°C to ${day.max}°C, rain chance ${day.rainChance}%`
+        );
+
+      }
+
+      return rows.join("\n");
+
+    }
+
+
+    // =========================================
+    // 8. SHOW REPORT ON THE PAGE
+    // =========================================
+
+    function renderReport(loc, w, script, mapUrl) {
+
+      document.getElementById("showLat").textContent = loc.latitude;
+      document.getElementById("showLon").textContent = loc.longitude;
+      document.getElementById("showArea").textContent = loc.area;
+      document.getElementById("showCity").textContent = loc.city;
+      document.getElementById("showState").textContent = loc.state;
+      document.getElementById("showCountry").textContent = loc.country;
+      document.getElementById("showAddress").textContent = loc.full_address;
+
+      document.getElementById("mapLink").href = mapUrl;
+
+      const c = w.current;
+      const today = w.days[0];
+
+      document.getElementById("showTemp").textContent = `${c.temp}°C`;
+
+      document.getElementById("showDesc").textContent =
+        `${c.desc} (feels like ${c.feels}°C)`;
+
+      document.getElementById("showDetails").textContent =
+        `Humidity: ${c.humidity}% | Wind: ${c.wind} km/h | Precipitation now: ${c.rain} mm`;
+
+      document.getElementById("showToday").textContent =
+        `Today: high ${today.max}°C, low ${today.min}°C, rain chance ${today.rainChance}%, ` +
+        `sunrise ${today.sunrise}, sunset ${today.sunset}`;
+
+      // Forecast rows (built with DOM methods, no HTML injection)
+
+      const forecastBox = document.getElementById("showForecast");
+      forecastBox.textContent = "";
+
+      for (let i = 1; i <= 3 && i < w.days.length; i++) {
+
+        const day = w.days[i];
+
+        const row = document.createElement("div");
+        row.className = "forecast-row";
+
+        const label = document.createElement("span");
+        label.className = "forecast-day";
+        label.textContent = day.label;
+
+        const info = document.createElement("span");
+        info.textContent =
+          `${day.desc}, ${day.min}°C to ${day.max}°C, rain chance ${day.rainChance}%`;
+
+        row.appendChild(label);
+        row.appendChild(info);
+        forecastBox.appendChild(row);
+
+      }
+
+      document.getElementById("showPodcast").textContent = script;
+
+      result.style.display = "block";
+
+    }
+
+
+    // =========================================
+    // 9. MAIN FLOW: LOCATION -> WEATHER -> PAGE -> EMAIL
+    // =========================================
+
+    async function runReport(lat, lon) {
+
+      const myRequest = ++requestCounter;
+
+      lastReport = null;
+      result.style.display = "none";
+      status.textContent = "";
+
+      if (!validateCoordinates(lat, lon)) {
+        status.textContent = "Enter valid coordinates.";
+        return;
+      }
+
+      try {
+
+        status.textContent = "Finding location...";
+
+        const loc = await reverseGeocode(lat, lon);
+
+        if (myRequest !== requestCounter) return;
+
+        status.textContent = "Getting weather...";
+
+        const weather = await fetchWeather(lat, lon);
+
+        if (myRequest !== requestCounter) return;
+
+        const script = buildPodcastScript(loc, weather);
+
+        const mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+
+        renderReport(loc, weather, script, mapUrl);
+
+        const c = weather.current;
+        const today = weather.days[0];
+
+        // Everything the EmailJS template can use
+        lastReport = {
+
+          to_email: MY_GMAIL,
+
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          area: loc.area,
+          city: loc.city,
+          state: loc.state,
+          country: loc.country,
+          full_address: loc.full_address,
+          map_url: mapUrl,
+
+          report_time: new Date().toLocaleString("en-IN"),
+
+          current_weather:
+            `${c.desc}, ${c.temp}°C (feels like ${c.feels}°C), ` +
+            `humidity ${c.humidity}%, wind ${c.wind} km/h`,
+
+          today_summary:
+            `High ${today.max}°C, low ${today.min}°C, rain chance ${today.rainChance}%, ` +
+            `sunrise ${today.sunrise}, sunset ${today.sunset}`,
+
+          forecast: buildForecastText(weather),
+
+          podcast_script: script
+
+        };
+
+        status.textContent = "Location and weather loaded.";
+
+        // Automatic email (silent: no success or failure message on the page)
+        await sendReportEmail();
+
+      }
+
+      catch (error) {
+
+        if (myRequest !== requestCounter) return;
+
+        console.error("Report error:", error);
+
+        status.textContent = error.message || "Something went wrong.";
+
+      }
+
+    }
+
+
+    // =========================================
+    // 10. SEND REPORT TO GMAIL (SILENT)
+    // =========================================
+
+    async function sendReportEmail() {
+
+      if (!lastReport) return;
+
+      try {
+
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          lastReport
+        );
+
+      }
+
+      catch (error) {
+
+        // Failures are only logged to the browser console (F12)
+        console.error("Email sending failed:", error);
+
+      }
+
+    }
+
+
+    // =========================================
+    // 11. DETECT CURRENT DEVICE LOCATION
+    // =========================================
+
+    function useCurrentLocation() {
+
+      if (!navigator.geolocation) {
+
+        status.textContent =
+          "Geolocation is not supported by your browser.";
+
+        return;
+
+      }
+
+      status.textContent = "Getting current location...";
+
+      navigator.geolocation.getCurrentPosition(
+
+        function (position) {
+
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          latitudeInput.value = lat;
+          longitudeInput.value = lon;
+
+          runReport(lat, lon);
+
+        },
+
+        function (error) {
+
+          let message = "Unable to get your location.";
+
+          switch (error.code) {
+
+            case error.PERMISSION_DENIED:
+              message =
+                "Location permission was denied. Enter coordinates manually.";
+              break;
+
+            case error.POSITION_UNAVAILABLE:
+              message = "Location information is unavailable.";
+              break;
+
+            case error.TIMEOUT:
+              message = "Location request timed out.";
+              break;
+
+          }
+
+          status.textContent = message;
+
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+
+      );
+
+    }
+
+
+    // =========================================
+    // 12. BUTTONS
+    // =========================================
+
+    document.getElementById("findBtn")
+      .addEventListener("click", function () {
+
+        const latValue = latitudeInput.value.trim();
+        const lonValue = longitudeInput.value.trim();
+
+        if (latValue === "" || lonValue === "") {
+
+          status.textContent =
+            "Please enter both latitude and longitude.";
+
+          return;
+
+        }
+
+        runReport(Number(latValue), Number(lonValue));
+
+      });
+
+    document.getElementById("currentBtn")
+      .addEventListener("click", useCurrentLocation);
+
+
+    // =========================================
+    // 13. RESET REPORT WHEN INPUT CHANGES
+    // =========================================
+
+    function invalidateReport() {
+
+      requestCounter++;
+      lastReport = null;
+      result.style.display = "none";
+      status.textContent = "";
+
+    }
+
+    latitudeInput.addEventListener("input", invalidateReport);
+    longitudeInput.addEventListener("input", invalidateReport);
+
+
+    // =========================================
+    // 14. AUTO-RUN WHEN THE PAGE OPENS
+    // =========================================
+
+    window.addEventListener("load", useCurrentLocation);
+
+  </script>
+
+</body>
+
+</html>
